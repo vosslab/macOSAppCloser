@@ -21,11 +21,18 @@ struct AppInfo: Identifiable {
 struct AppCloserView: View {
 	@State private var apps: [AppInfo] = []
 	@State private var isLoaded = false
+	@State private var showAccessoryApps = false
 
 	var body: some View {
 		VStack(alignment: .leading) {
 			Text("Select apps to close:")
 			.font(.headline)
+
+			Toggle("Include menu bar / accessory apps", isOn: $showAccessoryApps)
+			.padding(.bottom, 8)
+			.onChange(of: showAccessoryApps) { _ in
+				loadApps()
+			}
 
 			List {
 				ForEach($apps) { $app in
@@ -42,7 +49,7 @@ struct AppCloserView: View {
 					.frame(maxWidth: .infinity, alignment: .leading)
 				}
 			}
-			.frame(maxHeight: .infinity) // fills available vertical space
+			.frame(maxHeight: .infinity)
 
 			HStack {
 				Spacer()
@@ -57,7 +64,7 @@ struct AppCloserView: View {
 			}
 		}
 		.padding()
-		.frame(width: 800, height: 600) // bigger window
+		.frame(width: 800, height: 600)
 		.onAppear(perform: loadApps)
 	}
 
@@ -69,14 +76,15 @@ struct AppCloserView: View {
 
 		let filtered = runningApps
 		.filter {
-			$0.activationPolicy == .regular // || $0.activationPolicy == .accessory
+			$0.activationPolicy == .regular || (showAccessoryApps && $0.activationPolicy == .accessory)
 		}
 		.compactMap { app -> AppInfo? in
 			guard let name = app.localizedName else { return nil }
-			let shouldClose = app.activationPolicy == .regular  // ← checked if regular, unchecked if accessory
+			let shouldClose = app.activationPolicy == .regular
 			return AppInfo(name: name, icon: app.icon, shouldClose: shouldClose)
 		}
 		.filter { $0.name != "Finder" }
+		.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
 
 		apps = filtered
 		print("[Debug] Loaded apps: \(apps.map { "\($0.name): \($0.shouldClose ? "✅" : "⬜️")" })")
