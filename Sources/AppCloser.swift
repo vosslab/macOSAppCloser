@@ -69,7 +69,7 @@ struct AppCloserView: View {
 
 		let filtered = runningApps
 		.filter {
-			$0.activationPolicy == .regular || $0.activationPolicy == .accessory
+			$0.activationPolicy == .regular // || $0.activationPolicy == .accessory
 		}
 		.compactMap { app -> AppInfo? in
 			guard let name = app.localizedName else { return nil }
