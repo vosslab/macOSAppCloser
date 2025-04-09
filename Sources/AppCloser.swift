@@ -29,10 +29,20 @@ struct AppCloserView: View {
 			.font(.headline)
 
 			Toggle("Include menu bar / accessory apps", isOn: $showAccessoryApps)
-			.padding(.bottom, 8)
-			.onChange(of: showAccessoryApps) { _ in
-				loadApps()
+			.padding(.bottom, 4)
+
+			HStack {
+				Button("Refresh App List") {
+					loadApps(force: true)
+				}
+				Button("Uncheck All") {
+					for index in apps.indices {
+						apps[index].shouldClose = false
+					}
+				}
+				Spacer()
 			}
+			.padding(.bottom, 8)
 
 			List {
 				ForEach($apps) { $app in
@@ -65,11 +75,13 @@ struct AppCloserView: View {
 		}
 		.padding()
 		.frame(width: 800, height: 600)
-		.onAppear(perform: loadApps)
+		.onAppear {
+			loadApps(force: true)
+		}
 	}
 
-	func loadApps() {
-		guard !isLoaded else { return }
+	func loadApps(force: Bool = false) {
+		if isLoaded && !force { return }
 		isLoaded = true
 
 		let runningApps = NSWorkspace.shared.runningApplications
