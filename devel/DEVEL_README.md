@@ -10,12 +10,11 @@ Use this folder for scripts that help maintainers do repo-level work:
 - Changelog querying, commit-message drafting, and changelog rotation.
 - Documentation repair and repo hygiene cleanup.
 - Build-output cleanup that is useful across repo types.
-- Template-only developer helpers that should ship into consumer repos under
-  their own `devel/` folders.
+- Developer helpers shared across repos through propagation.
 
 Do not put reusable library code, runtime application code, or permanent tests
-here. Shared test helpers belong in `tests/`; shipped runtime files belong in
-the appropriate repo root, package, or `templates/<type>/` path.
+here. Shared test helpers belong in `tests/`; runtime files belong in the
+appropriate repo root or package.
 
 ## Current root scripts
 
@@ -29,22 +28,23 @@ the appropriate repo root, package, or `templates/<type>/` path.
 | [flatten_broken_md_links.py](flatten_broken_md_links.py) | Repair or flatten broken Markdown links. |
 | [dist_clean.sh](dist_clean.sh) | Remove build artifacts, caches, and dependency installs. |
 
-## Template devel scripts
+## Propagated devel scripts
 
-Some developer tools ship into consumer repos via propagation and appear in `devel/` when present.
+Some developer tools arrive by propagation and appear in `devel/` when this repo's
+`REPO_TYPE` calls for them.
 
-`templates/shared/devel/` holds tools that propagate to non-PyPI python, rust, swift, and other
-consumer repo types (repos with `pyproject.toml` are excluded by the `lacks_file` condition).
-When present in a consumer repo, `devel/make_release.py` prepares a GitHub source
-release: CalVer freshness check, free-tag check, committed-LICENSE verification, zip and tgz
-archive build with byte-level LICENSE spot-check, LLM-prompt generation for the release
-description, optional `docs/RELEASE_HISTORY.md` and `docs/NEWS.md` updates, and printed
-`git tag` + `gh release create` commands. Use `--dry-run` to preview or `--write` to update
-doc files. See [docs/REPO_STYLE.md](../docs/REPO_STYLE.md) versioning section for the full flow.
+`devel/make_release.py` reaches non-PyPI python, rust, swift, and other repo types
+(repos that ship a `pyproject.toml` are excluded). When present, it prepares a GitHub
+source release: CalVer freshness check, free-tag check, committed-LICENSE verification,
+zip and tgz archive build with byte-level LICENSE spot-check, LLM-prompt generation for
+the release description, optional `docs/RELEASE_HISTORY.md` and `docs/NEWS.md` updates,
+and printed `git tag` + `gh release create` commands. Use `--dry-run` to preview or
+`--write` to update doc files. See [docs/REPO_STYLE.md](../docs/REPO_STYLE.md) versioning
+section for the full flow.
 
-Some developer tools are type-specific and live under `templates/<type>/devel/`
-so they propagate only to matching consumer repos. Examples include Python
-release publishing helpers and TypeScript setup/rendering helpers.
+Other propagated devel tools are type-specific, so a repo receives only the ones
+matching its `REPO_TYPE`. Examples include Python release publishing helpers and
+TypeScript setup/rendering helpers.
 
 ## Running scripts
 

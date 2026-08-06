@@ -90,7 +90,7 @@ Test files are organized by execution model and scope:
 
 * **`tests/test_*.py`** - Fast, deterministic unit and integration tests. Rules: no network, no file I/O beyond `tmp_path`, no sleeps, no subprocess CLI round-trips. Examples: lint checks (pyflakes, ASCII compliance, indentation), parser correctness, round-trip invariants.
 * **`tests/e2e/`** - Non-browser end-to-end (shell or Python orchestration); excluded from pytest (outside scope of `pytest tests/`); run via explicit shell or Python runner. Examples: full bootstrap flow, multi-repo propagation with real git operations, CLI round-trip chains.
-* **`tests/playwright/`** - Browser-driven E2E; excluded from pytest; run via Playwright runner or explicit shell. Examples: full-stack web app flows, UI interaction and assertion, rendered-output verification. The website family (`website` and its inheriting `typescript`) includes `PLAYWRIGHT_TEST_STYLE.md`, shipped via the `templates/website/` overlay, in their propagated `docs/` folder for browser test authoring rules.
+* **`tests/playwright/`** - Browser-driven E2E; excluded from pytest; run via Playwright runner or explicit shell. Examples: full-stack web app flows, UI interaction and assertion, rendered-output verification. The website family (`website` and its inheriting `typescript`) includes `PLAYWRIGHT_TEST_STYLE.md` in their propagated `docs/` folder for browser test authoring rules.
 
 ## Runtime budget
 
@@ -174,8 +174,8 @@ Repo-hygiene tests (ascii, whitespace, pyflakes, shebangs, and similar enumerati
 get their file list from one shared helper, `file_utils.discover_files`. It is the canonical
 discovery API: it owns git scope selection, absolute-path join, dedupe, skip-dir filtering,
 extension filtering, the `isfile` check, and the sort. Use `file_utils.discover_files` as the
-single source of file discovery; the shared `SKIP_DIRS` and `path_has_skip_dir` live only in
-`file_utils.py`.
+single source of file discovery; the shared built-in directory and scratch exclusions live in
+`path_has_skip_dir` in `file_utils.py`.
 
 Signature:
 
@@ -202,8 +202,9 @@ only in `file_utils` regression tests that point discovery at a temporary direct
 
 Discovery filters files through three layers, in order:
 
-- Layer 1, `SKIP_DIRS` (vendored, `file_utils.py`): universal directory exclusions.
-  Identical across all repos.
+- Layer 1, universal exclusions (vendored, `file_utils.py`): built-in skipped directories,
+  `_temp*` scratch files/directories, and `dist_*/` scratch build directories, all handled by
+  `path_has_skip_dir`. Identical across all repos.
 - Layer 2, `REPO_HYGIENE_FILTERS` (repo-local, `tests/conftest.py`): per-test repo-local
   file/glob exclusions. This is the only home for repo-specific exclusions, because `conftest.py`
   survives propagation while vendored files (`file_utils.py` and every `tests/test_*.py`) are
@@ -352,8 +353,8 @@ Two vendored hygiene tests keep the discovery scaffold clean:
   Use builtin generics (`list`, `dict`, `tuple`, `set`) and PEP 604 unions (`X | None`).
   Use `collections.abc` (for example `collections.abc.Callable`) for callable and iterable params.
 - `tests/test_pytest_hygiene.py` -- AST guard ensuring hygiene tests keep all file-discovery
-  logic in `file_utils` (the shared `SKIP_DIRS`, `path_has_skip_dir`, and `gather_*` discovery
-  live there). See the "discovery lives in file_utils" guidance above.
+  logic in `file_utils` (the shared scratch/directory filter, `SKIP_DIRS`, `path_has_skip_dir`,
+  and `gather_*` discovery live there). See the "discovery lives in file_utils" guidance above.
 
 ## Failure triage
 

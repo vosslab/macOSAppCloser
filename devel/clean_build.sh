@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # clean_build.sh - light clean: wipe build output, tool caches, and test
-# artifacts while KEEPING dependency installs (node_modules, Rust target/) so no
-# reinstall or full recompile is needed afterward.
+# artifacts while KEEPING dependency installs (node_modules, Rust target/,
+# SwiftPM checkouts) so no re-fetch is needed afterward. For Swift, a
+# recompile IS expected on the next build; only the dependency re-fetch is
+# avoided, mirroring `swift package clean` (compiled output only) rather than
+# `swift package reset` (full wipe, including fetched checkouts).
 #
 # Front door: this is the everyday build cleaner, wired to `npm run clean` in
 # TypeScript repos. Run directly as ./devel/clean_build.sh. For a deep reset that
-# also removes node_modules and Rust target/ (a distribution-clean checkout), use
+# also removes node_modules, Rust target/, and SwiftPM's fetched checkouts (a
+# distribution-clean checkout that re-fetches everything), use
 # devel/dist_clean.sh instead. Both keep the committed package-lock.json.
 #
 # Universal across repo types (python, typescript, rust). Patterns that do not
@@ -53,9 +57,21 @@ delete_path .eslintcache
 delete_path .prettiercache
 delete_path .nyc_output
 
-# Xcode / Swift build outputs and metadata.
-delete_path .build
-delete_path .swiftpm
+# Xcode / Swift build outputs and metadata. Compiled output only: keeps
+# .build/checkouts, .build/repositories, and .build/registry (SwiftPM's
+# fetched dependency sources and cache), plus .build/workspace-state.json
+# (the dependency resolution manifest, the only top-level .build/*.json file
+# in current SwiftPM layouts -- a build-plan glob would wrongly sweep it up),
+# so the next build recompiles without re-fetching. .swiftpm is per-user/IDE
+# state, not build output, so it is also kept here (dist_clean.sh still
+# removes both for a full reset). Mirrors `swift package clean` (compiled
+# output only) rather than `swift package reset` (full wipe).
+delete_path .build/debug
+delete_path .build/release
+delete_path .build/artifacts
+delete_path .build/build.db
+delete_find_matches swiftpmTriple -type d -path './.build/*-apple-macosx'
+delete_find_matches swiftpmBuildPlan -type f -path './.build/*.yaml'
 delete_path DerivedData
 delete_find_matches xcresult -type d -name '*.xcresult'
 delete_find_matches xcuserdata -type d -name 'xcuserdata'
